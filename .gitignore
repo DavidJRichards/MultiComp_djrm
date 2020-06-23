@@ -1,0 +1,10 @@
+
+Multicomp (mc-2g-1024)/System18.img
+multicomp cpm demo disk image.zip
+*/*/db/*.*
+*/*/junk/*.*
+*/*/incremental_db/*
+*/*/incremental_db/*/*
+*/*/output_files/*.*
+*.bak
+

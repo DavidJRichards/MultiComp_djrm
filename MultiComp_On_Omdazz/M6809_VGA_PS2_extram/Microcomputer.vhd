@@ -13,7 +13,19 @@
 -- Hardware handshake RTS/CTS
 --
 -- djrm conversion to sdram begin, june23 2020
--- pll and sdram fsm copied from pdp2011 DE0
+-- pll and sdram fsm copied from Sytse van Slooten's pdp2011 DE0
+--
+-- Copyright (c) 2008-2019 Sytse van Slooten
+--
+-- Permission is hereby granted to any person obtaining a copy of these VHDL source files and
+-- other language source files and associated documentation files ("the materials") to use
+-- these materials solely for personal, non-commercial purposes.
+-- You are also granted permission to make changes to the materials, on the condition that this
+-- copyright notice is retained unchanged.
+--
+-- The materials are distributed in the hope that they will be useful, but WITHOUT ANY WARRANTY;
+-- without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+--
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -191,10 +203,19 @@ begin
 	-- SRAM
 --	sramAddress(18 downto 16) <= "010"; -- A17 is CE2 on AS6C1008 , needs +ve enable
 --	sramAddress(15 downto 0) <= cpuAddress(15 downto 0);
+--	sramAddress(18 downto 16) <= "010"; -- A17 is CE2 on AS6C1008 , needs +ve enable
 --	sramData <= cpuDataOut when n_WR='0' else (others => 'Z');
 --	n_sRamWE	<= (n_memWR or n_externalRamCS);
 --	n_sRamOE <= (n_memRD or n_externalRamCS);
 --	n_sRamCS <= n_externalRamCS;
+	
+
+	-- SDRAM
+	addr(15 downto 0) <= cpuAddress(15 downto 0);
+	addr(21 downto 16) <= "000000";
+
+	dato(7 downto 0) <= cpuDataOut when n_WR='0' else (others => 'Z');
+	dato(15 downto 8) <= cpuDataOut when n_WR='0' else (others => 'Z');
 	
 	-- ____________________________________________________________________________________
 	-- 6809 CPU
@@ -292,6 +313,9 @@ begin
 	n_memRD <= not(cpuClock) nand n_WR;
 	n_memWR <= not(cpuClock) nand (not n_WR);
 	
+	control_dato	<= not n_WR; 
+	control_dati 	<= n_WR;
+	
 	-- ____________________________________________________________________________________
 	-- CHIP SELECTS
 	-- Jumper Pin_85 selects whether UART or VDU are default
@@ -301,8 +325,12 @@ begin
 	n_interface2CS <= '0' when ((cpuAddress(15 downto 1) = "111111111101001" and serSelect = '1') or 
 										 (cpuAddress(15 downto 1) = "111111111101000" and serSelect = '0')) else '1'; -- 2 bytes FFD2-FFD3
 	n_internalRamCS <= '0' when cpuAddress(15 downto 12) = "0000" else '1'; -- 4K at bottom of memory (0x0 to 0xfff)
-	n_externalRamCS <= '0' when cpuAddress(15 downto 12) = "0001" else '1'; -- next 4K at bottom of memory (0x1000 to 0x1fff)
---	n_internalRamCS <= not n_basRomCS;
+--	dram_match      <= '0' when cpuAddress(15 downto 12) = "0001" else '1'; -- next 4K at bottom of memory (0x1000 to 0x1fff)
+	dram_match      <= '1' when cpuAddress(15 downto 12) = "0001" else '0'; -- next 4K at bottom of memory (0x1000 to 0x1fff)
+	ifetch <= dram_match;
+--	n_externalRamCS <= '0' when cpuAddress(15 downto 12) = "0001" else '1'; -- next 4K at bottom of memory (0x1000 to 0x1fff)
+
+	--	n_internalRamCS <= not n_basRomCS;
 --	n_externalRamCS <= not n_basRomCS;
 	
 	-- ____________________________________________________________________________________
@@ -314,6 +342,7 @@ begin
 		basRomData 					when n_basRomCS = '0'			else
 		internalRam1DataOut 		when n_internalRamCS = '0' 	else
 --		sramData 					when n_externalRamCS = '0' 	else
+		dati(7 downto 0)        when dram_match = '1'         else
 		x"FF";
 	
 	-- ____________________________________________________________________________________
@@ -561,6 +590,7 @@ process(c0)
 
                   if dram_match = '1' and control_dati = '1' then
                      -- activate command
+--    o_BUZZER <= '0'; -- read
                      dram_cs_n <= '0';
                      dram_ras_n <= '0';
                      dram_cas_n <= '1';
@@ -577,6 +607,7 @@ process(c0)
                   -- write, t1-t2
                   if dram_match = '1' and control_dato = '1' then
                      -- activate command
+--    o_BUZZER <= '0'; --write
                      dram_cs_n <= '0';
                      dram_ras_n <= '0';
                      dram_cas_n <= '1';
@@ -614,7 +645,8 @@ process(c0)
                   -- read, t3-t4
                   if dram_match = '1' and control_dati = '1' then
                      -- reada command
-                     dram_cs_n <= '0';
+--     o_BUZZER <= '0'; --read
+                    dram_cs_n <= '0';
                      dram_ras_n <= '1';
                      dram_cas_n <= '0';
                      dram_we_n <= '1';
@@ -634,6 +666,7 @@ process(c0)
                   -- write, t3-t4
                   if dram_match = '1' and control_dato = '1' then
                      -- writea command
+--    o_BUZZER <= '1'; --write
                      dram_cs_n <= '0';
                      dram_ras_n <= '1';
                      dram_cas_n <= '0';
@@ -685,6 +718,7 @@ process(c0)
                when dram_c13 =>
                   -- read, t5-t6
                   if dram_match = '1' and control_dati = '1' then
+--                     dati <= x"1234"; --dram_dq;
                      dati <= dram_dq;
                   end if;
                   dram_fsm <= dram_c14;

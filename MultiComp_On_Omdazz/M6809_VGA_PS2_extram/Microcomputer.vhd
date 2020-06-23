@@ -86,7 +86,7 @@ entity Microcomputer is
 		ps2Data		: inout std_logic;
 
 		i_pbutton   : in std_logic_vector(1 downto 0);
-		o_BUZZER        : out std_logic;
+		o_BUZZER    : out std_logic;
 		serSelect	: in std_logic := '1'
 	);
 end Microcomputer;
@@ -164,16 +164,16 @@ signal dram_fsm : dram_fsm_type := dram_init;
 	signal slowreset : std_logic;
 	signal slowresetdelay : integer range 0 to 4095 := 4095;
 	signal vtreset : std_logic := '1';
-signal ifetch: std_logic;
-signal iwait: std_logic;
+--signal ifetch: std_logic;
+--signal iwait: std_logic;
 --signal reset: std_logic; djrm now n-reset
 signal addr : std_logic_vector(21 downto 0);
-signal addrq : std_logic_vector(21 downto 0);
+--signal addrq : std_logic_vector(21 downto 0);
 signal dati : std_logic_vector(15 downto 0);
 signal dato : std_logic_vector(15 downto 0);
 signal control_dati : std_logic;
 signal control_dato : std_logic;
-signal control_datob : std_logic;
+signal control_datob : std_logic :='0';
 
 
 component pll is
@@ -213,9 +213,9 @@ begin
 	-- SDRAM
 	addr(15 downto 0) <= cpuAddress(15 downto 0);
 	addr(21 downto 16) <= "000000";
-
 	dato(7 downto 0) <= cpuDataOut when n_WR='0' else (others => 'Z');
-	dato(15 downto 8) <= cpuDataOut when n_WR='0' else (others => 'Z');
+   dram_cke <= '1';
+   dram_clk <= c0;
 	
 	-- ____________________________________________________________________________________
 	-- 6809 CPU
@@ -313,8 +313,8 @@ begin
 	n_memRD <= not(cpuClock) nand n_WR;
 	n_memWR <= not(cpuClock) nand (not n_WR);
 	
-	control_dato	<= not n_WR; 
-	control_dati 	<= n_WR;
+	control_dato	<= (not n_WR); 
+	control_dati 	<= n_WR;     
 	
 	-- ____________________________________________________________________________________
 	-- CHIP SELECTS
@@ -327,7 +327,7 @@ begin
 	n_internalRamCS <= '0' when cpuAddress(15 downto 12) = "0000" else '1'; -- 4K at bottom of memory (0x0 to 0xfff)
 --	dram_match      <= '0' when cpuAddress(15 downto 12) = "0001" else '1'; -- next 4K at bottom of memory (0x1000 to 0x1fff)
 	dram_match      <= '1' when cpuAddress(15 downto 12) = "0001" else '0'; -- next 4K at bottom of memory (0x1000 to 0x1fff)
-	ifetch <= dram_match;
+--	ifetch <= dram_match;
 --	n_externalRamCS <= '0' when cpuAddress(15 downto 12) = "0001" else '1'; -- next 4K at bottom of memory (0x1000 to 0x1fff)
 
 	--	n_internalRamCS <= not n_basRomCS;
@@ -421,10 +421,12 @@ process(c0)
 --            end if;
          else
 
-            case dram_fsm is
+--      o_BUZZER <= '0'; --
+           case dram_fsm is
 
                when dram_init =>
-                  dram_cs_n <= '0';
+--      o_BUZZER <= '0'; --init
+                 dram_cs_n <= '0';
                   dram_ras_n <= '1';
                   dram_cas_n <= '1';
                   dram_we_n <= '1';
@@ -541,7 +543,8 @@ process(c0)
                   end if;
 
                when dram_idle =>
-                  dram_cs_n <= '1';
+--     o_BUZZER <= '0'; --idle
+                 dram_cs_n <= '1';
                   dram_ras_n <= '1';
                   dram_cas_n <= '1';
                   dram_we_n <= '1';
@@ -559,8 +562,8 @@ process(c0)
 
                when dram_c1 =>
 
-						cpuclk <= '1';
-						cpuClock <= '1'; -- djrm
+                  cpuclk <= '1';
+                  cpuClock <= '1'; -- djrm
 
                   if cpuresetlength = 0 then
                      cpureset <= '0';
@@ -584,9 +587,10 @@ process(c0)
 
                when dram_c6 =>
                   -- read, t1-t2
-                  if ifetch = '1' then
-                     addrq <= addr;
-                  end if;
+--                  if ifetch = '1' then
+--                     addrq <= addr;
+--                  end if;
+--    o_BUZZER <= '0'; --any
 
                   if dram_match = '1' and control_dati = '1' then
                      -- activate command
@@ -596,7 +600,8 @@ process(c0)
                      dram_cas_n <= '1';
                      dram_we_n <= '1';
 --                     dram_addr(12) <= '0';
-                     dram_addr(11 downto 0) <= addr(20 downto 9);
+--                     dram_addr(11 downto 0) <= addr(20 downto 9);
+                     dram_addr(11 downto 0) <= addr(19 downto 8);
 
                      dram_udqm <= '0';
                      dram_ldqm <= '0';
@@ -613,7 +618,8 @@ process(c0)
                      dram_cas_n <= '1';
                      dram_we_n <= '1';
 --                     dram_addr(12) <= '0';
-                     dram_addr(11 downto 0) <= addr(20 downto 9);
+--                     dram_addr(11 downto 0) <= addr(20 downto 9);
+                     dram_addr(11 downto 0) <= addr(19 downto 8);
 
                      dram_udqm <= '0';
                      dram_ldqm <= '0';
@@ -655,8 +661,8 @@ process(c0)
                      dram_addr(10) <= '1';
                      dram_addr(9) <= '1';
                      dram_addr(8) <= '0';
-                     dram_addr(7 downto 0) <= addr(8 downto 1);
-
+--                     dram_addr(7 downto 0) <= addr(8 downto 1);
+                     dram_addr(7 downto 0) <= addr(7 downto 0);
                      dram_udqm <= '0';
                      dram_ldqm <= '0';
                      dram_ba_1 <= '0';
@@ -666,7 +672,7 @@ process(c0)
                   -- write, t3-t4
                   if dram_match = '1' and control_dato = '1' then
                      -- writea command
---    o_BUZZER <= '1'; --write
+--    o_BUZZER <= '0'; --write
                      dram_cs_n <= '0';
                      dram_ras_n <= '1';
                      dram_cas_n <= '0';
@@ -676,7 +682,8 @@ process(c0)
                      dram_addr(10) <= '1';
                      dram_addr(9) <= '1';
                      dram_addr(8) <= '0';
-                     dram_addr(7 downto 0) <= addr(8 downto 1);
+--                     dram_addr(7 downto 0) <= addr(8 downto 1);
+                     dram_addr(7 downto 0) <= addr(7 downto 0);
                      dram_udqm <= '0';
                      dram_ldqm <= '0';
                      if control_datob = '1' then
@@ -693,8 +700,8 @@ process(c0)
 
                   dram_fsm <= dram_c9;
 
-               cpuclk <= '0';
-               cpuClock <= '0';
+                  cpuclk <= '0';
+                  cpuClock <= '0';
 
                when dram_c9 =>
 
@@ -717,7 +724,7 @@ process(c0)
 
                when dram_c13 =>
                   -- read, t5-t6
-                  if dram_match = '1' and control_dati = '1' then
+                 if dram_match = '1' and control_dati = '1' then
 --                     dati <= x"1234"; --dram_dq;
                      dati <= dram_dq;
                   end if;

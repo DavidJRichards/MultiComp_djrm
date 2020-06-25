@@ -324,14 +324,14 @@ begin
 										 (cpuAddress(15 downto 1) = "111111111101001" and serSelect = '0')) else '1'; -- 2 bytes FFD0-FFD1
 	n_interface2CS <= '0' when ((cpuAddress(15 downto 1) = "111111111101001" and serSelect = '1') or 
 										 (cpuAddress(15 downto 1) = "111111111101000" and serSelect = '0')) else '1'; -- 2 bytes FFD2-FFD3
-	n_internalRamCS <= '0' when cpuAddress(15 downto 12) = "0000" else '1'; -- 4K at bottom of memory (0x0 to 0xfff)
---	dram_match      <= '0' when cpuAddress(15 downto 12) = "0001" else '1'; -- next 4K at bottom of memory (0x1000 to 0x1fff)
-	dram_match      <= '1' when cpuAddress(15 downto 12) = "0001" else '0'; -- next 4K at bottom of memory (0x1000 to 0x1fff)
+--	n_internalRamCS <= '0' when cpuAddress(15 downto 12) = "0000" else '1'; -- 4K at bottom of memory (0x0 to 0xfff)
+--	dram_match      <= '1' when cpuAddress(15 downto 12) = "0001" else '0'; -- next 4K at bottom of memory (0x1000 to 0x1fff)
 --	ifetch <= dram_match;
 --	n_externalRamCS <= '0' when cpuAddress(15 downto 12) = "0001" else '1'; -- next 4K at bottom of memory (0x1000 to 0x1fff)
 
 	--	n_internalRamCS <= not n_basRomCS;
 --	n_externalRamCS <= not n_basRomCS;
+	dram_match <= n_basRomCS;
 	
 	-- ____________________________________________________________________________________
 	-- BUS ISOLATION

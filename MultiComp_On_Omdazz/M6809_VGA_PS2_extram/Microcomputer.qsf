@@ -325,7 +325,10 @@ set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 
+
+
 set_global_assignment -name QIP_FILE "../../../MultiComp_djrm/MultiComp (VHDL Template)/Components/PLL/PLL_14_5/pll.qip"
+set_global_assignment -name VHDL_FILE "../../MultiComp (VHDL Template)/Components/RAM_External/ExternalSdram.vhd"
 set_global_assignment -name VHDL_FILE "../../../MultiComp_djrm/MultiComp (VHDL Template)/Components/ROMs/6809/M6809_SIMON_ROM.vhd"
 set_global_assignment -name VHDL_FILE "../../../MultiComp_djrm/MultiComp (VHDL Template)/Components/ROMs/6809/M6809_forth9_ROM.vhd"
 set_global_assignment -name VHDL_FILE "../../../MultiComp/MultiComp (VHDL Template)/Components/CPU/M6809/cpu09l.vhd"
@@ -341,7 +344,5 @@ set_global_assignment -name VHDL_FILE "../../../MultiComp/MultiComp (VHDL Templa
 set_global_assignment -name VHDL_FILE "../../../MultiComp/MultiComp (VHDL Template)/Components/TERMINAL/CGABoldRomReduced.vhd"
 set_global_assignment -name VHDL_FILE "../../../MultiComp/MultiComp (VHDL Template)/Components/TERMINAL/SBCTextDisplayRGB.vhd"
 set_global_assignment -name VHDL_FILE Microcomputer.vhd
-
 set_global_assignment -name CDF_FILE Chain1.cdf
-
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

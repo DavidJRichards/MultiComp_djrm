@@ -26,18 +26,18 @@ entity Microcomputer is
 		n_reset		: in std_logic;
 		i_CLOCK_50	: in std_logic;
 
-      dram_addr : out std_logic_vector(11 downto 0);
-      dram_dq : inout std_logic_vector(15 downto 0);
-      dram_cas_n : out std_logic;
-      dram_ras_n : out std_logic;
-      dram_we_n : out std_logic;
-      dram_cs_n : out std_logic;
-      dram_clk : out std_logic;
-      dram_cke : out std_logic;
-      dram_ba_1 : out std_logic;
-      dram_ba_0 : out std_logic;
-      dram_udqm : out std_logic;
-      dram_ldqm : out std_logic;
+      dram_addr 	: out std_logic_vector(11 downto 0);
+      dram_dq 		: inout std_logic_vector(15 downto 0);
+      dram_cas_n 	: out std_logic;
+      dram_ras_n 	: out std_logic;
+      dram_we_n 	: out std_logic;
+      dram_cs_n 	: out std_logic;
+      dram_clk 	: out std_logic;
+      dram_cke 	: out std_logic;
+      dram_ba_1 	: out std_logic;
+      dram_ba_0 	: out std_logic;
+      dram_udqm 	: out std_logic;
+      dram_ldqm 	: out std_logic;
  		
 		rxd1			: in std_logic;
 		txd1			: out std_logic;
@@ -77,13 +77,11 @@ architecture struct of Microcomputer is
 	
 	signal w_displayed_number		: std_logic_vector(31 downto 0);
 
-	signal n_memWR						: std_logic :='1';
-	signal n_memRD 					: std_logic :='1';
+--	signal n_memWR						: std_logic :='1';
+--	signal n_memRD 					: std_logic :='1';
 
-
-	signal c0 : std_logic;
-	signal dram_match : std_logic;
-
+	signal dram_match 				: std_logic;
+	signal sdramDataOut 				: std_logic_vector(7 downto 0);
 
 	signal n_int1						: std_logic :='1';	
 	signal n_int2						: std_logic :='1';	
@@ -95,43 +93,17 @@ architecture struct of Microcomputer is
 	signal n_interface2CS			: std_logic :='1';
 	
 	signal cpuClock					: std_logic;
---	signal resetLow					: std_logic := '1';
+	signal resetLow					: std_logic := '1';
 
-   signal serialCount         : std_logic_vector(15 downto 0) := x"0000";
-   signal serialCount_d       : std_logic_vector(15 downto 0);
-   signal serialEn            : std_logic;
+   signal serialCount         	: std_logic_vector(15 downto 0) := x"0000";
+   signal serialCount_d       	: std_logic_vector(15 downto 0);
+   signal serialEn            	: std_logic;
 
---	signal cpuclk : std_logic := '0';
-	signal cpureset : std_logic := '1';
-	signal vtreset : std_logic := '1';
-	signal addr : std_logic_vector(21 downto 0);
-	signal dati : std_logic_vector(15 downto 0);
-	signal dato : std_logic_vector(15 downto 0);
-	signal control_dati : std_logic;
-	signal control_dato : std_logic;
-
-component pll is
-   port(
-      inclk0 : in std_logic := '0';
-      c0 : out std_logic
-   );
-end component;
 	 
 begin
-
--- setup pll
-   pll0: pll port map(
-      inclk0 => i_CLOCK_50,
-      c0 => c0
-   );
-
-   o_BUZZER <= '1';
-
-	-- SDRAM
-	addr(15 downto 0) <= cpuAddress(15 downto 0);
-	addr(21 downto 16) <= "000000";
-	dato(7 downto 0) <= cpuDataOut when n_WR='0' else (others => 'Z');
 	
+   o_BUZZER <= '1'; -- sound off
+		
 	-- ____________________________________________________________________________________
 	-- 6809 CPU
 	-- works with Version 1.26
@@ -139,8 +111,7 @@ begin
 	cpu1 : entity work.cpu09
 		port map(
 			clk => not(cpuClock),
---			rst => not resetLow,
-			rst => cpureset, -- djrm, from sram fsm initialisation
+			rst => not resetLow,
 			rw => n_WR,
 			addr => cpuAddress,
 			data_in => cpuDataIn,
@@ -165,15 +136,15 @@ begin
 	
 	-- ____________________________________________________________________________________
 	-- RAM GOES HERE
- 	ram1: entity work.InternalRam4K
-		port map
-		(
-			address 	=> cpuAddress(11 downto 0),
-			clock 	=> i_CLOCK_50,
-			data 		=> cpuDataOut,
-			wren 		=> not(n_memWR or n_internalRamCS),
-			q 			=> internalRam1DataOut
-		);
+-- 	ram1: entity work.InternalRam4K
+--		port map
+--		(
+--			address 	=> cpuAddress(11 downto 0),
+--			clock 	=> i_CLOCK_50,
+--			data 		=> cpuDataOut,
+--			wren 		=> not(n_memWR or n_internalRamCS),
+--			q 			=> internalRam1DataOut
+--		);
 			
 	-- ____________________________________________________________________________________
 	-- SDRAM GOES HERE
@@ -193,20 +164,22 @@ begin
 			dram_ba_0 	=> dram_ba_0,
 			dram_udqm 	=> dram_udqm,
 			dram_ldqm 	=> dram_ldqm,	
+			
 			-- interface to system
-			n_reset 		=> n_reset,
-			c0  			=> c0,
-			addr  		=> addr,
-			dram_match  => dram_match,
-			dati 			=> dati,
-			dato 			=> dato,
-			control_dati => control_dati,
-			control_dato => control_dato,
-			cpuClock  	=> cpuClock,
-			cpureset 	=> cpureset,
-			vtreset  	=> vtreset
+			reset 					=> not n_reset,	-- reset button
+			i_CLOCK_50				=> i_CLOCK_50,
+			cpuclk  					=> cpuClock,		-- generated clock 
+			cpureset_n 				=> resetLow,		-- generated reset 
+
+			-- interface to memory
+			addr(15 downto 0)  	=> cpuAddress,				
+			addr(21 downto 16) 	=> "000000",
+			dram_match  			=> not dram_match,
+			dati(7 downto 0)		=> sdramDataOut,
+			dato(7 downto 0) 		=> cpuDataOut,
+			control_dati 			=> n_WR,
+			control_dato 			=> not n_WR
 		);
-	
 	
 	-- ____________________________________________________________________________________
 	-- INPUT/OUTPUT DEVICES
@@ -214,8 +187,7 @@ begin
 	-- Removed the Composite video output
 	io1 : entity work.SBCTextDisplayRGB
 		port map (
---			n_reset => resetLow,
-			n_reset => not vtreset, -- djrm from dram fsm
+			n_reset => resetLow,
 			clk => i_CLOCK_50,
 			
 			-- RGB CompVideo signals
@@ -258,11 +230,8 @@ begin
 	
 	-- ____________________________________________________________________________________
 	-- MEMORY READ/WRITE LOGIC
-	n_memRD <= not(cpuClock) nand n_WR;
-	n_memWR <= not(cpuClock) nand (not n_WR);
-	
-	control_dato	<= (not n_WR); 
-	control_dati 	<= n_WR;     
+--	n_memRD <= not(cpuClock) nand n_WR;
+--	n_memWR <= not(cpuClock) nand (not n_WR);
 	
 	-- ____________________________________________________________________________________
 	-- CHIP SELECTS
@@ -272,8 +241,8 @@ begin
 	n_interface2CS <= '0' when ((cpuAddress(15 downto 1) = "111111111101001" and serSelect = '1') or 
 										 (cpuAddress(15 downto 1) = "111111111101000" and serSelect = '0')) else '1'; -- 2 bytes FFD2-FFD3
 --	n_internalRamCS <= '0' when cpuAddress(15 downto 12) = "0000" else '1'; -- 4K at bottom of memory (0x0 to 0xfff)
---	dram_match      <= '1' when cpuAddress(15 downto 12) = "0001" else '0'; -- next 4K at bottom of memory (0x1000 to 0x1fff)
-	dram_match <= n_basRomCS;
+--	dram_match      <= '0' when cpuAddress(15 downto 12) = "0001" else '1'; -- next 4K at bottom of memory (0x1000 to 0x1fff)
+	dram_match 		<= not n_basRomCS;
 	
 	-- ____________________________________________________________________________________
 	-- BUS ISOLATION
@@ -283,8 +252,7 @@ begin
 		interface2DataOut 		when n_interface2CS = '0' 		else
 		basRomData 					when n_basRomCS = '0'			else
 		internalRam1DataOut 		when n_internalRamCS = '0' 	else
---		sramData 					when n_externalRamCS = '0' 	else
-		dati(7 downto 0)        when dram_match = '1'         else
+		sdramDataOut            when dram_match = '0'         else
 		x"FF";
 	
 	-- ____________________________________________________________________________________

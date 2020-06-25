@@ -24,32 +24,34 @@ library ieee;
 entity ExternalSdram is
 
 	port (
+	-- reset and clock inputs
+	reset : in std_logic;
+	i_CLOCK_50	: in std_logic;
 	-- physical pins to memory device
-	dram_addr : out std_logic_vector(11 downto 0);
-	dram_dq : inout std_logic_vector(15 downto 0);
-	dram_cas_n : out std_logic;
-	dram_ras_n : out std_logic;
-	dram_we_n : out std_logic;
-	dram_cs_n : out std_logic;
-	dram_clk : out std_logic;
-	dram_cke : out std_logic;
-	dram_ba_1 : out std_logic;
-	dram_ba_0 : out std_logic;
-	dram_udqm : out std_logic;
-	dram_ldqm : out std_logic;
-	
-	-- interface to system
-	n_reset : in std_logic;
-	c0 : in std_logic;
-	addr :  in std_logic_vector(21 downto 0);
-	dram_match : in std_logic;
-	dati : out std_logic_vector(15 downto 0);
-	dato : in std_logic_vector(15 downto 0);
+	dram_addr : 	out std_logic_vector(11 downto 0);
+	dram_dq : 		inout std_logic_vector(15 downto 0);
+	dram_cas_n : 	out std_logic;
+	dram_ras_n : 	out std_logic;
+	dram_we_n : 	out std_logic;
+	dram_cs_n : 	out std_logic;
+	dram_clk : 		out std_logic;
+	dram_cke : 		out std_logic;
+	dram_ba_1 : 	out std_logic;
+	dram_ba_0 : 	out std_logic;
+	dram_udqm : 	out std_logic;
+	dram_ldqm : 	out std_logic;	
+	-- interface to memory
+	addr :  			in std_logic_vector(21 downto 0);
+	dram_match : 	in std_logic;
 	control_dati : in std_logic;
 	control_dato : in std_logic;
-	cpuClock : out std_logic := '0';
-	cpureset : out std_logic := '1';
-	vtreset : out std_logic := '1'
+	dato : 			in std_logic_vector(15 downto 0);
+	dati : 			out std_logic_vector(15 downto 0);
+	-- interface to system 
+	cpuclk : 		out std_logic := '0';
+	cpureset : 		out std_logic := '1';
+	cpureset_n :	out std_logic := '0';
+	vtreset : 		out std_logic := '1'
 	);
 		
 end ExternalSdram;
@@ -81,19 +83,30 @@ type dram_fsm_type is (
    dram_idle
 );
 
+signal c0 : 				std_logic;
 signal dram_fsm : dram_fsm_type := dram_init;
 signal cpuresetlength : integer range 0 to 63 := 63;
-signal slowreset : std_logic;
+signal slowreset : 		std_logic;
 signal slowresetdelay : integer range 0 to 4095 := 4095;
-signal dram_counter : integer range 0 to 32767;
-signal dram_wait : integer range 0 to 15;
-signal cpuclk : std_logic := '0';
+signal dram_counter : 	integer range 0 to 32767;
+signal dram_wait : 		integer range 0 to 15;
+
+component pll is
+   port(
+      inclk0 : in std_logic := '0';
+      c0 : 		out std_logic
+   );
+end component;
 
 begin
 
+	pll0: pll port map(
+      inclk0 => i_CLOCK_50,
+      c0 => c0
+   );
+
    dram_cke <= '1';
    dram_clk <= c0;
-
 
 process(c0)
    begin
@@ -112,8 +125,8 @@ process(c0)
             dram_ba_0 <= '0';
 
             cpuclk <= '0';
-				cpuClock <= '0'; -- djrm
             cpureset <= '1';
+            cpureset_n <= '0';
             cpuresetlength <= 63;
 				
          else
@@ -121,7 +134,7 @@ process(c0)
            case dram_fsm is
 
                when dram_init =>
-                 dram_cs_n <= '0';
+                  dram_cs_n <= '0';
                   dram_ras_n <= '1';
                   dram_cas_n <= '1';
                   dram_we_n <= '1';
@@ -133,6 +146,7 @@ process(c0)
                   dram_ba_0 <= '0';
 
                   cpureset <= '1';
+                  cpureset_n <= '0';
                   cpuresetlength <= 8;
                   dram_counter <= 32767;
                   dram_fsm <= dram_poweron;
@@ -237,7 +251,7 @@ process(c0)
                   end if;
 
                when dram_idle =>
-                 dram_cs_n <= '1';
+                  dram_cs_n <= '1';
                   dram_ras_n <= '1';
                   dram_cas_n <= '1';
                   dram_we_n <= '1';
@@ -254,10 +268,10 @@ process(c0)
 
                when dram_c1 =>
                   cpuclk <= '1';
-                  cpuClock <= '1'; -- djrm
 
                   if cpuresetlength = 0 then
                      cpureset <= '0';
+                     cpureset_n <= '1';
                   else
                      cpuresetlength <= cpuresetlength - 1;
                   end if;
@@ -368,7 +382,6 @@ process(c0)
                   dram_fsm <= dram_c9;
 
                   cpuclk <= '0';
-                  cpuClock <= '0';
 
                when dram_c9 =>
 
@@ -411,7 +424,7 @@ process(c0)
    process (c0)
    begin
       if c0='1' and c0'event then
-         if n_reset = '0' then -- djrm changed polarity
+         if reset = '1' then
             slowreset <= '1';
             slowresetdelay <= 4095;
          else

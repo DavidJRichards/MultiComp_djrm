@@ -91,7 +91,7 @@ signal slowresetdelay : integer range 0 to 4095 := 4095;
 signal dram_counter : 	integer range 0 to 32767;
 signal dram_wait : 		integer range 0 to 15;
 
-component pll is
+component pll_x14d5 is
    port(
       inclk0 : in std_logic := '0';
       c0 : 		out std_logic
@@ -100,7 +100,7 @@ end component;
 
 begin
 
-	pll0: pll port map(
+	pll0: pll_x14d5 port map(
       inclk0 => i_CLOCK_50,
       c0 => c0
    );

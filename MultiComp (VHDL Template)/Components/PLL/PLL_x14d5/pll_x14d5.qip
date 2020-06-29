@@ -1,0 +1,8 @@
+set_global_assignment -name IP_TOOL_NAME "ALTPLL"
+set_global_assignment -name IP_TOOL_VERSION "13.0"
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) "pll_x14d5.vhd"]
+set_global_assignment -name MISC_FILE [file join $::quartus(qip_path) "pll_x14d5.bsf"]
+set_global_assignment -name MISC_FILE [file join $::quartus(qip_path) "pll_x14d5_inst.vhd"]
+set_global_assignment -name MISC_FILE [file join $::quartus(qip_path) "pll_x14d5.inc"]
+set_global_assignment -name MISC_FILE [file join $::quartus(qip_path) "pll_x14d5.cmp"]
+set_global_assignment -name MISC_FILE [file join $::quartus(qip_path) "pll_x14d5.ppf"]

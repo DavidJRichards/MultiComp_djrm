@@ -85,7 +85,7 @@ BEGIN
 	GENERIC MAP (
 		clock_enable_input_a => "BYPASS",
 		clock_enable_output_a => "BYPASS",
-		init_file => "../../../MultiComp/MultiComp (VHDL Template)/Components/ROMs/6809/SIMON.hex",
+		init_file => "../../../MultiComp_djrm/MultiComp (VHDL Template)/Components/ROMs/6809/SIMON.hex",
 		intended_device_family => "Cyclone II",
 		lpm_hint => "ENABLE_RUNTIME_MOD=NO",
 		lpm_type => "altsyncram",
